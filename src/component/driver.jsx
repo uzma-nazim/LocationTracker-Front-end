@@ -12,15 +12,15 @@ import {
 import BASE_URI from "../core";
 // import { Map, InfoWindow, Marker, GoogleApiWrapper } from "google-maps-react";
 function Driver(props) {
-  const center = {
-    lat: 7.8731,
-    lng: 80.7718,
-  };
+
 
   const [customerLocation, setcustomerLocation] = useState(null);
   const [test, settest] = useState(true);
 
-  const [driverLocation, setdriverLocation] = useState(null);
+  const [driverLocation, setdriverLocation] = useState({
+    lat:24.8532,
+    lng: 67.0167,
+  });
   const [databaselocation, setdatabaselocation] = useState(null);
   const [getLocation, setdgetLocation] = useState(null);
   // const socket = io.connect("http://localhost:5000");
@@ -37,60 +37,49 @@ function Driver(props) {
     }
 
     socket.emit("driverLocation", driverLocation);
-    console.log("driver Location");
+    console.log("driver Location" , driverLocation);
   }, [customerLocation]);
   const handleAllowLocation = () => {
     navigator.geolocation.watchPosition(successCallback, errorCallback);
     function successCallback(position) {
       const { accuracy, latitude, longitude, altitude, heading, speed } =
         position.coords;
-
-      // Show a map centered at latitude / longitude.
-      console.log(latitude);
-      socket.emit("driverLocation", { lat: latitude, lng: longitude });
-
-      setdriverLocation({ lat: latitude, lng: longitude });
+        
+      socket.emit("driverLocation", { lat: latitude, lng: longitude });      
     }
     function errorCallback(error) {}
-    // navigator.geolocation.getCurrentPosition(
-    //   (position) =>
-    //     setLocation({
-    //       lat: position.coords.latitude,
-    //       lng: position.coords.longitude,
-    //     }),
-    //   (error) => {}
-    // );
+
   };
   useEffect(() => {
     handleAllowLocation();
     navigator.geolocation.getCurrentPosition(
-      (position) =>
+      (position) =>{
+      console.log(position.coords.latitude)
         setdriverLocation({
           lat: position.coords.latitude,
           lng: position.coords.longitude,
-        }),
-      (error) => {}
+        })}
+      
     );
   }, []);
 
-  let onMarkerDragEnd = (coord, index, markers) => {
-    const { latLng } = coord;
-    const lat = latLng.lat();
-    const lng = latLng.lng();
-    console.log(lng, lat);
-    socket.emit("driverLocation", { lat, lng });
+  // let onMarkerDragEnd = (coord, index, markers) => {
+  //   const { latLng } = coord;
+  //   const lat = latLng.lat();
+  //   const lng = latLng.lng();
+  //   console.log(lng, lat);
+  //   socket.emit("driverLocation", { lat, lng });
 
-    setdriverLocation({ lat, lng });
+  //   setdriverLocation({ lat, lng });
 
-    // if(lat==customerLocation.lat&& lng==customerLocation.lng){
-
-    // }
-  };
+  
+  // };
   const { isLoaded, loadError } = useJsApiLoader({
     id: "google-map-script",
     googleMapsApiKey: "AIzaSyDj8QiKUowTVNp29whHKnhZK0noNI53JnA",
   });
   const [path, setPath] = useState([]);
+  const [directions, setDirections] = useState(null);
 
   useEffect(() => {
     if (!isLoaded || loadError) return;
@@ -105,61 +94,19 @@ function Driver(props) {
 
     directionsService.route(request, (result, status) => {
       if (status === window.google.maps.DirectionsStatus.OK) {
-        setPath(
-          result.routes[0].overview_path.map((point) => ({
-            lat: point.lat(),
-            lng: point.lng(),
-          }))
-        );
+        setDirections(result);
       }
     });
   }, [window.google, customerLocation, driverLocation]);
   return isLoaded ? (
     <div>
       Driver
-      {/* <Map
-        style={{ width: "600px", height: "600px" }}
-        google={props.google}
-        zoom={14}
-        center={customerLocation}
-      >
-        <Marker
-          icon={{
-            url: "https://cdn-icons-png.flaticon.com/512/66/66841.png",
-            scaledSize: new props.google.maps.Size(55, 55),
-          }}
-          draggable={true}
-          title={"The marker`s title will appear as a tooltip."}
-          name={"SOMA"}
-          position={driverLocation}
-          onDragend={(t, map, coord) => onMarkerDragEnd(coord)}
-        />
-        <Marker
-         icon={{
-            url: "https://www.seekpng.com/png/detail/41-410093_circled-user-icon-user-profile-icon-png.png",
-            scaledSize: new props.google.maps.Size(55, 55),
-          }}
-          
-          title={"The marker`s title will appear as a tooltip."}
-          name={"Customer"}
-          position={customerLocation}
-          
-        />
-
-        <InfoWindow>
-          <div>karachi</div>
-        </InfoWindow>
-      </Map> */}
+     
       <GoogleMap
         center={customerLocation ? customerLocation : driverLocation}
-        zoom={5}
-        mapContainerStyle={{ width: "100%", height: "60vh" }}
-        options={{
-          zoomControl: false,
-          streetViewControl: false,
-          mapTypeControl: false,
-          fullscreenControl: false,
-        }}
+        zoom={25}
+        mapContainerStyle={{ width: "100%", height: "100vh" }}
+ 
       >
         <Marker
           icon={{
@@ -179,22 +126,36 @@ function Driver(props) {
 
             scaledSize: new window.google.maps.Size(42, 42),
           }}
-          draggable={true}
+          
           title={"The marker`s title will appear as a tooltip."}
           name={"SOMA"}
           position={driverLocation}
-          onDrag={(coord) => {
-            onMarkerDragEnd(coord);
-          }}
+          // onDrag={(coord) => {
+          //   onMarkerDragEnd(coord);
+          // }}
         />
-        {path.length > 0 && (
+        {/* {path.length > 0 && (
           <Polyline
             path={path}
             strokeColor="#FF0000"
             strokeOpacity={1}
             strokeWeight={3}
           />
-        )}
+        )} */}
+        {directions && (
+        <DirectionsRenderer
+          
+          options={{
+            
+            markerOptions: {
+              visible: false,
+              
+          
+            },
+          }}
+          directions={directions}
+        />
+      )}
       </GoogleMap>
     </div>
   ) : (

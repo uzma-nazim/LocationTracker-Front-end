@@ -1,89 +1,3 @@
-// import axios from "axios";
-// import { useEffect, useRef, useState } from "react";
-// import { w3cwebsocket as W3CWebSocket } from "websocket";
-// import { Map, InfoWindow, Marker, GoogleApiWrapper } from "google-maps-react";
-
-// function Customer(props) {
-//   const socket = io.connect("http://localhost:5000");
-//   const [location, setLocation] = useState(null);
-//   const [driverlocation, setdriverlocation] = useState(null);
-//   const [databaselocation, setdatabaselocation] = useState(null);
-//   const [getLocation, setdgetLocation] = useState(null);
-
-//   const handleAllowLocation = () => {
-//     navigator.geolocation.getCurrentPosition(
-//       (position) =>
-//         setLocation({
-//           lat: position.coords.latitude,
-//           lng: position.coords.longitude,
-//         }),
-//       (error) => {}
-//     );
-//   };
-
-//   socket.on("rcvLoaction",driverlocation=>{
-//     const location= driverlocation
-//     console.log(driverlocation)
-//     // setdriverlocation(location)
-//     setLocation(driverlocation)
-
-//   })
-
-//   useEffect(() => {
-//     handleAllowLocation();
-//   }, []);
-//   const initialRender = useRef(true)
-//   useEffect(() => {
-//     if(initialRender.current){
-//         initialRender.current = false
-//         return
-//     }
-
-//   }, []);
-
-//   const handleCreate = () => {
-//     console.log("create");
-//     socket.emit("create-delivery", location)
-//   };
-
-//   return (
-//     <h1>
-//       customer
-//       <button onClick={handleCreate}>Create Delivery</button>
-//       <Map
-//         style={{ width: "600px", height: "600px" }}
-//         center={location}
-//         google={props.google}
-//         zoom={14}
-//       >
-//         <Marker
-//           title={"The marker`s title will appear as a tooltip."}
-//           name={"Customer"}
-//           position={location}
-//         />
-//         <Marker
-//           icon={{
-//             url: "https://cdn-icons-png.flaticon.com/512/66/66841.png",
-//             scaledSize: new props.google.maps.Size(55, 55),
-//           }}
-//           title={"The marker`s title will appear as a tooltip."}
-//           name={"Driver"}
-//             position={driverlocation}
-//         />
-
-//         <InfoWindow>
-//           <div>karachi</div>
-//         </InfoWindow>
-//       </Map>
-//     </h1>
-//   );
-// }
-
-// // export default App;
-// export default GoogleApiWrapper({
-//   apiKey: "AIzaSyDj8QiKUowTVNp29whHKnhZK0noNI53JnA",
-//   v: "3.30",
-// })(Customer);
 import { useEffect, useRef, useState } from "react";
 import io from "socket.io-client";
 
@@ -103,7 +17,9 @@ const center = {
 };
 
 function Customer() {
-  const [location, setLocation] = useState(null);
+
+
+  const [location, setLocation] = useState(  {lat: 33.6844 , lng:73.0479});
   const [driverlocation, setdriverlocation] = useState(null);
   const [databaselocation, setdatabaselocation] = useState(null);
   const [checkDriverLocation, setcheckDriverLocation] = useState(false);
@@ -123,29 +39,27 @@ function Customer() {
   };
 
   const handleCreate = () => {
-    console.log("create");
+    
     socket.emit("create-delivery", location);
   };
   useEffect(() => {
-    handleAllowLocation();
+    handleCreate()
+    // handleAllowLocation();
     socket.on("rcvLoaction", (driverlocation) => {
       setcheckDriverLocation(true);
 
-      const location = driverlocation;
 
       setdriverlocation(driverlocation);
     });
   }, []);
-  const initialRender = useRef(true);
-  useEffect(() => {
-    if (initialRender.current) {
-      initialRender.current = false;
-      return;
-    }
-    handleCreate();
-
-
-  }, [location]);
+  // const initialRender = useRef(true);
+  // useEffect(() => {
+  //   if (initialRender.current) {
+  //     initialRender.current = false;
+  //     return;
+  //   }
+  //   handleCreate();
+  // }, [location]);
   const { isLoaded, loadError } = useJsApiLoader({
     id: "google-map-script",
     googleMapsApiKey: "AIzaSyDj8QiKUowTVNp29whHKnhZK0noNI53JnA",
@@ -154,10 +68,11 @@ function Customer() {
   const [map, setMap] = useState(null);
 
   const [path, setPath] = useState([]);
+  const [directions, setDirections] = useState(null);
 
   useEffect(() => {
     if (!isLoaded || loadError) return;
-console.log("run" ,location ,driverlocation)
+    
     const directionsService = new window.google.maps.DirectionsService();
 
     const request = {
@@ -168,23 +83,18 @@ console.log("run" ,location ,driverlocation)
 
     directionsService.route(request, (result, status) => {
       if (status === window.google.maps.DirectionsStatus.OK) {
-        setPath(result.routes[0].overview_path.map(point => ({ lat: point.lat(), lng: point.lng() })));
+        // setPath(result.routes[0].overview_path.map(point => ({ lat: point.lat(), lng: point.lng() })));
+        setDirections(result);
       }
     });
   }, [window.google, location, driverlocation]);
   return isLoaded ? (
     <>
-      <button onClick={handleCreate}>Create</button>
+      <p>Customer</p>
       <GoogleMap
         center={driverlocation ? driverlocation : location}
-        zoom={5}
-        mapContainerStyle={{ width: "100%", height: "60vh" }}
-        options={{
-          zoomControl: false,
-          streetViewControl: false,
-          mapTypeControl: false,
-          fullscreenControl: false,
-        }}
+        zoom={25}
+        mapContainerStyle={{ width: "100%", height: "100vh" }}
         onLoad={(map) => setMap(map)}
       >
         <Marker
@@ -203,8 +113,20 @@ console.log("run" ,location ,driverlocation)
           }}
           position={driverlocation}
         />
-       {path.length > 0 && <Polyline path={path} strokeColor="#FF0000" strokeOpacity={1} strokeWeight={3} />}
-
+    
+      {directions && (
+        <DirectionsRenderer
+        
+          options={{
+            markerOptions: {
+              visible: false,
+              
+          
+            },
+          }}
+          directions={directions}
+        />
+      )}
         {/* {directionsResponse && (
           <DirectionsRenderer directions={directionsResponse} />
         )} */}

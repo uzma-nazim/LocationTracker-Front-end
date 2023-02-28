@@ -1,32 +1,113 @@
-import { useState, useEffect } from 'react';
-import {  GoogleMap, Marker, Polyline, useJsApiLoader, useLoadScript } from '@react-google-maps/api';
+// import React, { useState, useEffect } from 'react';
+// import { GoogleMap, Marker, DirectionsRenderer, useLoadScript } from '@react-google-maps/api';
 
-// Define libraries to be loaded
-const libraries = ['places'];
+// const libraries = ['places'];
 
-function TrackingMap() {
-  // State to store user1 position
+// function Test() {
+//   const [map, setMap] = useState(null);
+//   const [user1Position, setUser1Position] = useState({lat: 24.9517, lng:  67.0023});
+//   const [user2Position, setUser2Position] = useState({lat:33.6844, lng:  73.0479});
+//   const [directions, setDirections] = useState(null);
+
+//   const { isLoaded, loadError } = useLoadScript({
+//     googleMapsApiKey: 'AIzaSyDj8QiKUowTVNp29whHKnhZK0noNI53JnA',
+//     libraries
+//   });
+
+//   // useEffect(() => {
+//   //   if (isLoaded && user1Position && user2Position) {
+//   //     const directionsService = new window.google.maps.DirectionsService();
+
+//   //     const request = {
+//   //       origin: new window.google.maps.LatLng(user1Position),
+//   //       destination: new window.google.maps.LatLng(user2Position),
+//   //       travelMode: window.google.maps.TravelMode.DRIVING,
+//   //     };
+
+//   //     directionsService.route(request, (result, status) => {
+//   //       if (status === window.google.maps.DirectionsStatus.OK) {
+//   //         setDirections(result);
+//   //       }
+//   //     });
+//   //   }
+//   // }, [isLoaded, user1Position, user2Position]);
+
+//   useEffect(() => {
+//     if (isLoaded && user1Position && user2Position) {
+//       const directionsService = new window.google.maps.DirectionsService();
+
+//       const request = {
+//         origin: new window.google.maps.LatLng(user1Position),
+//         destination: new window.google.maps.LatLng(user2Position),
+//         travelMode: window.google.maps.TravelMode.DRIVING,
+//       };
+
+//       directionsService.route(request, (result, status) => {
+//         if (status === window.google.maps.DirectionsStatus.OK) {
+//           setDirections(result);
+
+//           // Zoom to fit the direction bounds
+//           const bounds = new window.google.maps.LatLngBounds();
+//           result.routes[0].legs.forEach((leg) => {
+//             leg.steps.forEach((step) => {
+//               step.path.forEach((point) => {
+//                 bounds.extend(point);
+//               });
+//             });
+//           });
+//           map.fitBounds(bounds);
+//         }
+//       });
+//     }
+//   }, [isLoaded, user1Position, user2Position, map]);
+
+//   return isLoaded ? (
+//     <GoogleMap
+//       mapContainerStyle={{width:"100%", height:"100vh"}}
+//       center={user1Position}
+//       zoom={23}
+
+//       onLoad={map => setMap(map)}
+//     >
+//       <Marker position={user1Position}  />
+//       <Marker position={user2Position} />
+//       {directions && <DirectionsRenderer directions={directions} />}
+//     </GoogleMap>
+//   ) : null;
+// }
+
+// export default Test;
+import React, { useState, useEffect, useRef } from "react";
+import {
+  GoogleMap,
+  Marker,
+  DirectionsRenderer,
+  useLoadScript,
+} from "@react-google-maps/api";
+
+const libraries = ["places"];
+
+function Test() {
   const [map, setMap] = useState(null);
+  const [zoom, setZoom] = useState(14);
+  const mapRef = useRef();
+  const [user1Position, setUser1Position] = useState({
+    lat: 24.9517,
+    lng: 67.0023,
+  });
+  const [user2Position, setUser2Position] = useState({
+    lat: 33.6844,
+    lng: 73.0479,
+  });
+  const [directions, setDirections] = useState(null);
 
-  const [user1Position, setUser1Position] = useState({lat: 24.9569449, lng: 66.974658});
-
-  // State to store user2 position
-  const [user2Position, setUser2Position] = useState({lat: 24.9517, lng: 67.0873});
-
-  // State to store path between the two positions
-  const [path, setPath] = useState([]);
-
-  // Load the Google Maps JavaScript API
   const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: 'AIzaSyDj8QiKUowTVNp29whHKnhZK0noNI53JnA',
-    // id: "google-map-script",
-    libraries
+    googleMapsApiKey: "AIzaSyDj8QiKUowTVNp29whHKnhZK0noNI53JnA",
+    libraries,
   });
 
-  // Compute the path between the two positions when the API is loaded and when the user2Position changes
   useEffect(() => {
-    console.log(user2Position)
-    if (isLoaded && user2Position) {
+    if (isLoaded && user1Position && user2Position) {
       const directionsService = new window.google.maps.DirectionsService();
 
       const request = {
@@ -37,30 +118,70 @@ function TrackingMap() {
 
       directionsService.route(request, (result, status) => {
         if (status === window.google.maps.DirectionsStatus.OK) {
-          setPath(result.routes[0].overview_path.map((point) => ({ lat: point.lat(), lng: point.lng() })));
+          setDirections(result);
         }
       });
     }
-  }, [isLoaded, user1Position, user2Position]);
+  }, [isLoaded, map, user1Position, user2Position]);
 
-  // Render the map with the markers and path when the API is loaded
+  const handleMapClick = (event) => {
+    map.panTo(event.latLng);
+  };
+  const handleZoomChange = () => {
+    // if (mapRef.current && mapRef.current.map) {
+    //   setZoom(mapRef.current.getZoom());
+    //   console.log(zoom)
+    // }
+  };
 
+  let onMarkerDragEnd = (coord, index, markers) => {
+    const { latLng } = coord;
+    const lat = latLng.lat();
+    const lng = latLng.lng();
+
+    setUser1Position({ lat, lng });
+  };
   return isLoaded ? (
-
-    <>
-    <h1>sdd</h1>
-    <GoogleMap mapContainerStyle={{width:"500px" , height:"600px"}} center={user1Position} zoom={13}
-        
-    
+    <GoogleMap
+      mapContainerStyle={{ width: "100%", height: "100vh" }}
+      center={user1Position}
+      zoom={zoom}
+      onLoad={(map) => setMap(map)}
+      ref={mapRef}
     >
-      <Marker position={user1Position} />
-      <Marker position={user2Position} />
-      {path.length > 0 && (
-        <Polyline path={path} options={{ strokeColor: '#FF0000', strokeOpacity: 1, strokeWeight: 3 }} />
+      <Marker
+        icon={{
+          url: require("../Assets/del.png"),
+
+          scaledSize: new window.google.maps.Size(42, 42),
+        }}
+        draggable={true}
+        onDrag={onMarkerDragEnd}
+        position={user1Position}
+      />
+      <Marker
+        icon={{
+          url: require("../Assets/user.png"),
+
+          scaledSize: new window.google.maps.Size(42, 42),
+        }}
+        position={user2Position}
+      />
+      {directions && (
+        <DirectionsRenderer
+          options={{
+            polylineOptions: {
+              strokeColor: "red",
+            },
+            markerOptions: {
+              visible: false,
+            },
+          }}
+          directions={directions}
+        />
       )}
     </GoogleMap>
-    </>
   ) : null;
 }
 
-export default TrackingMap;
+export default Test;
