@@ -185,7 +185,7 @@ function Driver(props) {
         {/* {path.length > 0 && (
           <Polyline
             path={path}
-            strokeColor="#FF0000"
+            strokeColor="#FF000"
             strokeOpacity={1}
             strokeWeight={3}
           />
