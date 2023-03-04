@@ -36,7 +36,9 @@ function Driver(props) {
       });
   };
   const handlegetlocation = () => {
-    navigator.geolocation.watchPosition(successCallback, errorCallback);
+    navigator.geolocation.watchPosition(successCallback, errorCallback, {
+      enableHighAccuracy: true
+    });
     function successCallback(position) {
       const { accuracy, latitude, longitude, altitude, heading, speed } =
         position.coords;
