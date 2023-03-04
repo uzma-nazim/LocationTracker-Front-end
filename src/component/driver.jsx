@@ -40,7 +40,7 @@ function Driver(props) {
     function successCallback(position) {
       const { accuracy, latitude, longitude, altitude, heading, speed } =
         position.coords;
-        console.log(latitude)
+      console.log(latitude);
       setdriverLocation({
         lat: latitude,
         lng: longitude,
@@ -59,8 +59,8 @@ function Driver(props) {
     });
 
     setInterval(() => {
-      handlegetlocation()
-      console.log("runn")
+      handlegetlocation();
+      console.log("runn");
     }, 7000);
 
     // const paylod = {
@@ -80,28 +80,27 @@ function Driver(props) {
     // });
   }, []);
 
-
-
   const initilaRender = useRef(true);
   useEffect(() => {
     if (initilaRender.current) {
       initilaRender.current = false;
       return;
     }
+    if (driver) {
+      const paylod = {
+        userId: driver.id,
+        lat: driverLocation.lat,
+        long: driverLocation.lng,
+      };
+      console.log(paylod);
 
-    const paylod = {
-      userId: driver.id,
-      lat: driverLocation.lat,
-      long: driverLocation.lng,
-    };
-    console.log(paylod);
+      socket.emit("locationUpdate", paylod);
 
-    socket.emit("locationUpdate", paylod);
-
-    socket.on("locationUpdate", (data) => {
-      console.log("first data", data);
-    });
-  }, [driver]);
+      socket.on("locationUpdate", (data) => {
+        console.log("first data", data);
+      });
+    }
+  }, [driverLocation]);
 
   let onMarkerDragEnd = (coord, index, markers) => {
     const { latLng } = coord;

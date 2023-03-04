@@ -37,7 +37,7 @@ function Customer() {
       (error) => {}
     );
   };
-
+console.log(driverlocation)
   useEffect(() => {
     setInterval(() => {
       socket.emit("getLocation", 3);
@@ -96,7 +96,10 @@ function Customer() {
   }, [window.google, location, driverlocation]);
   return isLoaded ? (
     <>
-      <p style={{ marginBottom: "0px" }}>Customer</p>
+
+    {driverlocation != null?
+    <>
+         <p style={{ marginBottom: "0px" }}>Customer</p>
       <GoogleMap
         // center={driverlocation ? driverlocation : location}
         center={driverlocation ?driverlocation:driverlocation  }
@@ -135,6 +138,14 @@ function Customer() {
           <DirectionsRenderer directions={directionsResponse} />
         )} */}
       </GoogleMap>
+    </>
+    :<>
+
+
+    <h1>Loading...</h1>
+    </>
+  } 
+ 
     </>
   ) : (
     <></>
