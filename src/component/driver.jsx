@@ -1,6 +1,6 @@
 import axios from "axios";
-import { useEffect, useRef, useState } from "react";
-import io from "socket.io-client";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { io } from "socket.io-client";
 import {
   useJsApiLoader,
   GoogleMap,
@@ -12,101 +12,148 @@ import {
 import BASE_URI from "../core";
 // import { Map, InfoWindow, Marker, GoogleApiWrapper } from "google-maps-react";
 function Driver(props) {
-
-
   const [customerLocation, setcustomerLocation] = useState(null);
-  const [test, settest] = useState(true);
+  const [map, setmap] = useState(null);
+  const [zoom, setzoom] = useState(25);
 
-  const [driverLocation, setdriverLocation] = useState({
-    lat:24.8532,
-    lng: 67.0167,
-  });
-  const [databaselocation, setdatabaselocation] = useState(null);
-  const [getLocation, setdgetLocation] = useState(null);
-  // const socket = io.connect("http://localhost:5000");
-  const socket = io.connect(BASE_URI);
-  socket.on("delivery-send", (customerLocation) => {
-    console.log(customerLocation);
-    setcustomerLocation(customerLocation);
-  });
-  const initialRender = useRef(true);
-  useEffect(() => {
-    if (initialRender.current) {
-      initialRender.current = false;
-      return;
-    }
+  const socket = io("https://tracking-app-production.up.railway.app");
 
-    socket.emit("driverLocation", driverLocation);
-    console.log("driver Location" , driverLocation);
-  }, [customerLocation]);
-  const handleAllowLocation = () => {
+  socket.on("connect", function () {});
+  socket.on("connect_error", (err) => {});
+
+  const [driverLocation, setdriverLocation] = useState();
+
+  const [driver, setdriver] = useState();
+
+  const handlegetdriver = () => {
+    axios
+      .get(`${BASE_URI}/user/3`)
+      .then((res) => {
+        setdriver(res.data);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  };
+  const handlegetlocation = () => {
     navigator.geolocation.watchPosition(successCallback, errorCallback);
     function successCallback(position) {
       const { accuracy, latitude, longitude, altitude, heading, speed } =
         position.coords;
-        
-      socket.emit("driverLocation", { lat: latitude, lng: longitude });      
+        console.log(latitude)
+      setdriverLocation({
+        lat: latitude,
+        lng: longitude,
+      });
     }
     function errorCallback(error) {}
-
   };
   useEffect(() => {
-    handleAllowLocation();
-    navigator.geolocation.getCurrentPosition(
-      (position) =>{
-      console.log(position.coords.latitude)
-        setdriverLocation({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-        })}
-      
-    );
+    handlegetdriver();
+
+    navigator.geolocation.getCurrentPosition((position) => {
+      setdriverLocation({
+        lat: position.coords.latitude,
+        lng: position.coords.longitude,
+      });
+    });
+
+    setInterval(() => {
+      handlegetlocation()
+      console.log("runn")
+    }, 7000);
+
+    // const paylod = {
+    //   userId: driver.id,
+    //   lat: driverLocation.lat,
+    //   long: driverLocation.lng,
+    // };
+
+    // socket.emit("locationUpdate", paylod, (data, err) => {
+    //   console.log("data", data);
+    //   console.log("err", err);
+    //   console.log("payload", paylod);
+    // });
+
+    // socket.on("locationUpdate", (data) => {
+    //   console.log(data);
+    // });
   }, []);
 
-  // let onMarkerDragEnd = (coord, index, markers) => {
-  //   const { latLng } = coord;
-  //   const lat = latLng.lat();
-  //   const lng = latLng.lng();
-  //   console.log(lng, lat);
-  //   socket.emit("driverLocation", { lat, lng });
 
-  //   setdriverLocation({ lat, lng });
 
-  
-  // };
+  const initilaRender = useRef(true);
+  useEffect(() => {
+    if (initilaRender.current) {
+      initilaRender.current = false;
+      return;
+    }
+
+    const paylod = {
+      userId: driver.id,
+      lat: driverLocation.lat,
+      long: driverLocation.lng,
+    };
+    console.log(paylod);
+
+    socket.emit("locationUpdate", paylod);
+
+    socket.on("locationUpdate", (data) => {
+      console.log("first data", data);
+    });
+  }, [driver]);
+
+  let onMarkerDragEnd = (coord, index, markers) => {
+    const { latLng } = coord;
+    const lat = latLng.lat();
+    const lng = latLng.lng();
+
+    const paylod = {
+      userId: driver.id,
+      lat: lat,
+      long: lng,
+    };
+
+    socket.emit("locationUpdate", paylod);
+
+    socket.on("locationUpdate", (data) => {
+      console.log("data", data);
+    });
+  };
   const { isLoaded, loadError } = useJsApiLoader({
     id: "google-map-script",
     googleMapsApiKey: "AIzaSyDj8QiKUowTVNp29whHKnhZK0noNI53JnA",
   });
   const [path, setPath] = useState([]);
   const [directions, setDirections] = useState(null);
+  const count = useRef(0);
 
   useEffect(() => {
     if (!isLoaded || loadError) return;
 
     const directionsService = new window.google.maps.DirectionsService();
 
-    const request = {
-      origin: new window.google.maps.LatLng(customerLocation),
-      destination: new window.google.maps.LatLng(driverLocation),
-      travelMode: window.google.maps.TravelMode.DRIVING,
-    };
+    // const request = {
+    //   origin: new window.google.maps.LatLng(customerLocation),
+    //   destination: new window.google.maps.LatLng(driverLocation),
+    //   travelMode: window.google.maps.TravelMode.DRIVING,
+    // };
 
-    directionsService.route(request, (result, status) => {
-      if (status === window.google.maps.DirectionsStatus.OK) {
-        setDirections(result);
-      }
-    });
+    // directionsService.route(request, (result, status) => {
+    //   if (status === window.google.maps.DirectionsStatus.OK) {
+    //     setDirections(result);
+    //   }
+    // });
   }, [window.google, customerLocation, driverLocation]);
   return isLoaded ? (
     <div>
       Driver
-     
       <GoogleMap
-        center={customerLocation ? customerLocation : driverLocation}
-        zoom={25}
+        onLoad={(map) => setmap(map)}
+        center={driverLocation}
+        // center={customerLocation ? customerLocation : driverLocation}
+        zoom={zoom}
         mapContainerStyle={{ width: "100%", height: "100vh" }}
- 
       >
         <Marker
           icon={{
@@ -126,13 +173,13 @@ function Driver(props) {
 
             scaledSize: new window.google.maps.Size(42, 42),
           }}
-          
+          draggable={false}
           title={"The marker`s title will appear as a tooltip."}
           name={"SOMA"}
           position={driverLocation}
-          // onDrag={(coord) => {
-          //   onMarkerDragEnd(coord);
-          // }}
+          onDragEnd={(coord) => {
+            onMarkerDragEnd(coord);
+          }}
         />
         {/* {path.length > 0 && (
           <Polyline
@@ -142,20 +189,16 @@ function Driver(props) {
             strokeWeight={3}
           />
         )} */}
-        {directions && (
-        <DirectionsRenderer
-          
-          options={{
-            
-            markerOptions: {
-              visible: false,
-              
-          
-            },
-          }}
-          directions={directions}
-        />
-      )}
+        {/* {directions && (
+          <DirectionsRenderer
+            options={{
+              markerOptions: {
+                visible: false,
+              },
+            }}
+            directions={directions}
+          />
+        )} */}
       </GoogleMap>
     </div>
   ) : (

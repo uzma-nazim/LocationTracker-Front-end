@@ -5,8 +5,7 @@ import Test from "./component/Test";
 function App(props) {
   return (
     <div>
-      Location Tracker
-      {/* <Test /> */}
+      
       <BrowserRouter>
         <Routes>
           <Route exact path="/" element={<Test />} />

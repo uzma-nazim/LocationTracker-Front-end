@@ -17,20 +17,20 @@ const center = {
 };
 
 function Customer() {
+  const socket = io("https://tracking-app-production.up.railway.app");
 
+  socket.on("connect", function () {});
+  socket.on("connect_error", (err) => {});
 
-  const [location, setLocation] = useState(  {lat: 33.6844 , lng:73.0479});
+  const [location, setLocation] = useState({ lat: 24.8272, lng: 67.1075 });
   const [driverlocation, setdriverlocation] = useState(null);
   const [databaselocation, setdatabaselocation] = useState(null);
   const [checkDriverLocation, setcheckDriverLocation] = useState(false);
 
-  const socket = io.connect(BASE_URI);
-  // const socket = io.connect("http://localhost:5000");
-
   const handleAllowLocation = () => {
     navigator.geolocation.getCurrentPosition(
       (position) =>
-        setLocation({
+      setdriverlocation({
           lat: position.coords.latitude,
           lng: position.coords.longitude,
         }),
@@ -38,20 +38,26 @@ function Customer() {
     );
   };
 
-  const handleCreate = () => {
-    
-    socket.emit("create-delivery", location);
-  };
   useEffect(() => {
-    handleCreate()
-    // handleAllowLocation();
-    socket.on("rcvLoaction", (driverlocation) => {
-      setcheckDriverLocation(true);
+    setInterval(() => {
+      socket.emit("getLocation", 3);
+      socket.on("getLocation", (data) => {
+        console.log(data);
+        setdriverlocation({
+          lat:parseFloat( data.tracking.lat),
+          lng: parseFloat( data.tracking.long),
+        })
+        console.log(parseFloat( data.tracking.long));
+      });
+      
+    }, 5000);
 
-
-      setdriverlocation(driverlocation);
+    socket.on("error", (data) => {
+      console.log('customer==>',data);
     });
+
   }, []);
+
   // const initialRender = useRef(true);
   // useEffect(() => {
   //   if (initialRender.current) {
@@ -72,27 +78,28 @@ function Customer() {
 
   useEffect(() => {
     if (!isLoaded || loadError) return;
-    
-    const directionsService = new window.google.maps.DirectionsService();
 
-    const request = {
-      origin: new window.google.maps.LatLng(location),
-      destination: new window.google.maps.LatLng(driverlocation),
-      travelMode: window.google.maps.TravelMode.DRIVING,
-    };
+    // const directionsService = new window.google.maps.DirectionsService();
 
-    directionsService.route(request, (result, status) => {
-      if (status === window.google.maps.DirectionsStatus.OK) {
-        // setPath(result.routes[0].overview_path.map(point => ({ lat: point.lat(), lng: point.lng() })));
-        setDirections(result);
-      }
-    });
+    // const request = {
+    //   origin: new window.google.maps.LatLng(location),
+    //   destination: new window.google.maps.LatLng(driverlocation),
+    //   travelMode: window.google.maps.TravelMode.DRIVING,
+    // };
+
+    // directionsService.route(request, (result, status) => {
+    //   if (status === window.google.maps.DirectionsStatus.OK) {
+    //     // setPath(result.routes[0].overview_path.map(point => ({ lat: point.lat(), lng: point.lng() })));
+    //     setDirections(result);
+    //   }
+    // });
   }, [window.google, location, driverlocation]);
   return isLoaded ? (
     <>
-      <p>Customer</p>
+      <p style={{ marginBottom: "0px" }}>Customer</p>
       <GoogleMap
-        center={driverlocation ? driverlocation : location}
+        // center={driverlocation ? driverlocation : location}
+        center={driverlocation ?driverlocation:driverlocation  }
         zoom={25}
         mapContainerStyle={{ width: "100%", height: "100vh" }}
         onLoad={(map) => setMap(map)}
@@ -113,20 +120,17 @@ function Customer() {
           }}
           position={driverlocation}
         />
-    
-      {directions && (
-        <DirectionsRenderer
-        
-          options={{
-            markerOptions: {
-              visible: false,
-              
-          
-            },
-          }}
-          directions={directions}
-        />
-      )}
+
+        {/* {directions && (
+          <DirectionsRenderer
+            options={{
+              markerOptions: {
+                visible: false,
+              },
+            }}
+            directions={directions}
+          />
+        )} */}
         {/* {directionsResponse && (
           <DirectionsRenderer directions={directionsResponse} />
         )} */}
