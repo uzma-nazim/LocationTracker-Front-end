@@ -37,7 +37,8 @@ function Driver(props) {
   };
   const handlegetlocation = () => {
     navigator.geolocation.watchPosition(successCallback, errorCallback, {
-      enableHighAccuracy: true
+      enableHighAccuracy: false,
+      maximumAge: 0,
     });
     function successCallback(position) {
       const { accuracy, latitude, longitude, altitude, heading, speed } =
@@ -53,12 +54,19 @@ function Driver(props) {
   useEffect(() => {
     handlegetdriver();
 
-    navigator.geolocation.getCurrentPosition((position) => {
-      setdriverLocation({
-        lat: position.coords.latitude,
-        lng: position.coords.longitude,
-      });
-    });
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setdriverLocation({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        });
+      },
+      (err) => {},
+      {
+        enableHighAccuracy: false,
+        maximumAge: 0,
+      }
+    );
 
     setInterval(() => {
       handlegetlocation();
