@@ -12,9 +12,9 @@ import {
 import BASE_URI from "../core";
 // import { Map, InfoWindow, Marker, GoogleApiWrapper } from "google-maps-react";
 function Driver(props) {
-  const [customerLocation, setcustomerLocation] = useState(null);
+  const [customerLocation, setcustomerLocation] = useState({lat:33.6844, lng:73.0479});
   const [map, setmap] = useState(null);
-  const [zoom, setzoom] = useState(25);
+  const [zoom, setzoom] = useState(17);
 
   const socket = io("https://tracking-app-production.up.railway.app");
 
@@ -142,17 +142,17 @@ function Driver(props) {
 
     const directionsService = new window.google.maps.DirectionsService();
 
-    // const request = {
-    //   origin: new window.google.maps.LatLng(customerLocation),
-    //   destination: new window.google.maps.LatLng(driverLocation),
-    //   travelMode: window.google.maps.TravelMode.DRIVING,
-    // };
+    const request = {
+      origin: new window.google.maps.LatLng(customerLocation),
+      destination: new window.google.maps.LatLng(driverLocation),
+      travelMode: window.google.maps.TravelMode.DRIVING,
+    };
 
-    // directionsService.route(request, (result, status) => {
-    //   if (status === window.google.maps.DirectionsStatus.OK) {
-    //     setDirections(result);
-    //   }
-    // });
+    directionsService.route(request, (result, status) => {
+      if (status === window.google.maps.DirectionsStatus.OK) {
+        setDirections(result);
+      }
+    });
   }, [window.google, customerLocation, driverLocation]);
   return isLoaded ? (
     <div>
@@ -164,25 +164,10 @@ function Driver(props) {
         zoom={zoom}
         mapContainerStyle={{ width: "100%", height: "100vh" }}
       >
-        <Marker
-          icon={{
-            // path: google.maps.SymbolPath.CIRCLE,
-            url: require("../Assets/user.png"),
-            fillColor: "#EB00FF",
-            scale: 0,
-            scaledSize: new window.google.maps.Size(42, 42),
-            width: "10px",
-          }}
-          position={customerLocation}
-        />
+        <Marker position={customerLocation} />
 
         <Marker
-          icon={{
-            url: require("../Assets/del.png"),
-
-            scaledSize: new window.google.maps.Size(42, 42),
-          }}
-          draggable={false}
+          draggable={true}
           title={"The marker`s title will appear as a tooltip."}
           name={"SOMA"}
           position={driverLocation}
@@ -198,7 +183,7 @@ function Driver(props) {
             strokeWeight={3}
           />
         )} */}
-        {/* {directions && (
+        {directions && (
           <DirectionsRenderer
             options={{
               markerOptions: {
@@ -207,7 +192,7 @@ function Driver(props) {
             }}
             directions={directions}
           />
-        )} */}
+        )}
       </GoogleMap>
     </div>
   ) : (

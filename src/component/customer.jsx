@@ -103,24 +103,16 @@ console.log(driverlocation)
       <GoogleMap
         // center={driverlocation ? driverlocation : location}
         center={driverlocation ?driverlocation:driverlocation  }
-        zoom={25}
+        zoom={17}
         mapContainerStyle={{ width: "100%", height: "100vh" }}
         onLoad={(map) => setMap(map)}
       >
         <Marker
-          icon={{
-            url: require("../Assets/user.png"),
-
-            scaledSize: new window.google.maps.Size(42, 42),
-          }}
+   
           position={location}
         />
         <Marker
-          icon={{
-            url: require("../Assets/del.png"),
-
-            scaledSize: new window.google.maps.Size(42, 42),
-          }}
+    
           position={driverlocation}
         />
 

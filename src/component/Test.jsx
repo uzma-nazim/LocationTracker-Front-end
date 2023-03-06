@@ -84,12 +84,15 @@ import {
   DirectionsRenderer,
   useLoadScript,
 } from "@react-google-maps/api";
+import axios from "axios";
 
 const libraries = ["places"];
 
 function Test() {
   const [map, setMap] = useState(null);
   const [zoom, setZoom] = useState(14);
+  const [location, setlocation] = useState();
+
   const mapRef = useRef();
   const [user1Position, setUser1Position] = useState({
     lat: 24.9517,
@@ -106,68 +109,63 @@ function Test() {
     libraries,
   });
 
+  // useEffect(() => {
+  //   if (isLoaded && user1Position && user2Position) {
+  //     const directionsService = new window.google.maps.DirectionsService();
+
+  //     const request = {
+  //       origin: new window.google.maps.LatLng(user1Position),
+  //       destination: new window.google.maps.LatLng(user2Position),
+  //       travelMode: window.google.maps.TravelMode.DRIVING,
+  //     };
+
+  //     directionsService.route(request, (result, status) => {
+  //       if (status === window.google.maps.DirectionsStatus.OK) {
+  //         setDirections(result);
+  //       }
+  //     });
+  //   }
+  // }, [isLoaded, map, user1Position, user2Position]);
+
   useEffect(() => {
-    if (isLoaded && user1Position && user2Position) {
-      const directionsService = new window.google.maps.DirectionsService();
-
-      const request = {
-        origin: new window.google.maps.LatLng(user1Position),
-        destination: new window.google.maps.LatLng(user2Position),
-        travelMode: window.google.maps.TravelMode.DRIVING,
-      };
-
-      directionsService.route(request, (result, status) => {
-        if (status === window.google.maps.DirectionsStatus.OK) {
-          setDirections(result);
-        }
+    axios
+      .get("http://139.59.16.161:3000/api/latLong")
+      .then((res) => {
+        console.log(res);
+        setlocation(res.data);
+      })
+      .catch((err) => {
+        console.log(err);
       });
-    }
-  }, [isLoaded, map, user1Position, user2Position]);
+  }, []);
 
-  const handleMapClick = (event) => {
-    map.panTo(event.latLng);
-  };
-  const handleZoomChange = () => {
-    // if (mapRef.current && mapRef.current.map) {
-    //   setZoom(mapRef.current.getZoom());
-    //   console.log(zoom)
-    // }
-  };
-
-  let onMarkerDragEnd = (coord, index, markers) => {
-    const { latLng } = coord;
-    const lat = latLng.lat();
-    const lng = latLng.lng();
-
-    setUser1Position({ lat, lng });
-  };
   return isLoaded ? (
-    <GoogleMap
-      mapContainerStyle={{ width: "100%", height: "100vh" }}
-      center={user1Position}
-      zoom={zoom}
-      onLoad={(map) => setMap(map)}
-      ref={mapRef}
-    >
-      <Marker
-        icon={{
-          url: require("../Assets/del.png"),
+    <>
+      {location ? (
+        <GoogleMap
+          mapContainerStyle={{ width: "100%", height: "100vh" }}
+          center={{
+            lat: location[0].location.coords.latitude,
+            lng: location[0].location.coords.longitude,
+          }}
+          zoom={zoom}
+          onLoad={(map) => setMap(map)}
+          ref={mapRef}
+        >
+          {location &&
+            location.map((item, ind) => {
+              return (
+                <Marker
+     
+                  position={{
+                    lat: item.location.coords.latitude,
+                    lng: item.location.coords.longitude,
+                  }}
+                />
+              );
+            })}
 
-          scaledSize: new window.google.maps.Size(42, 42),
-        }}
-        draggable={true}
-        onDrag={onMarkerDragEnd}
-        position={user1Position}
-      />
-      <Marker
-        icon={{
-          url: require("../Assets/user.png"),
-
-          scaledSize: new window.google.maps.Size(42, 42),
-        }}
-        position={user2Position}
-      />
-      {directions && (
+          {/* {directions && (
         <DirectionsRenderer
           options={{
             polylineOptions: {
@@ -179,8 +177,10 @@ function Test() {
           }}
           directions={directions}
         />
-      )}
-    </GoogleMap>
+      )} */}
+        </GoogleMap>
+      ) : null}
+    </>
   ) : null;
 }
 
